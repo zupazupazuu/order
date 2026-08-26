@@ -160,10 +160,11 @@
   .prod-info .mat{font-size:0.75rem;color:var(--stone);line-height:1.35;min-height:calc(1.35em * 2);}
   .prod-price{font-family:'Fraunces',serif;font-size:0.96rem;white-space:nowrap;}
   .add-btn{
-    margin-top:12px;width:100%;
-    padding:12px;border:1px solid var(--ink);
-    font-size:0.74rem;letter-spacing:0.09em;text-transform:uppercase;
-    transition:background .25s ease, color .25s ease, border-color .25s ease;
+    position:absolute;left:0;right:0;bottom:0;z-index:2;
+    padding:12px;border:none;border-top:1px solid var(--line);
+    background:rgba(250,247,242,0.92);backdrop-filter:blur(3px);
+    font-size:0.78rem;letter-spacing:0.04em;text-transform:lowercase;
+    transition:background .25s ease, color .25s ease;
   }
   .add-btn:hover{background:var(--ink);color:var(--bg);}
   .add-btn.added{background:var(--rose-deep);border-color:var(--rose-deep);color:#fff;}
@@ -285,7 +286,7 @@
 
 <header>
   <div class="header-inner">
-    <a href="#" class="brand"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHQAAACHCAYAAADHnH2QAAAACXBIWXMAACE4AAAhOAFFljFgAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAYDSURBVHgB7Z3tcdtGEEBfZvLfSgfbQVICUkGcCkxXEHfAdQVOB2QqiDugOlBUAZkKrFSg4AaiBQFHiR8AeLvYN7NjWSTFOzzg7rB3ACBwxQ+UyU0d7+sQxuGfp9hhl7SNPrX+/1DHnxRGVceXOr7V8ThBbOv4m2bDpO++wQapnHf061JM+aWOFdNIfCvunsqyqOMXyiOVKcnryhQK4Q+mOyLPPYpXNIKF67KkX7607YQCSM3DhnJFvnUEj9nHd6noH5X7aPejVxsUCY1Maf3uto6/eB6oyFP8TNPMCGWyoxlg3dPUIf38wOVIHR9ohB3qGz/Xoe1fXEOo8FLmro6PNBvjrc9VT/EbZQ9gktC92Punf3c8i9513p/qIjzvwBVv78A9mdeiOzoTziM1eWtsNddDxZpCWPKyYCsuR2gquMWemHMiHRBFtE5Cv3AVwyE0TdAWm6KOiS0FdTUr+gUcA8Gn2C0FDQyFfCHH/k7FpryiZSZW5AtaMT6C7cFTShwUlbESDhdWmQ7B5uBpQWEseH3vE6bl5qlMW8qXqRRIms14rdDXHIZXNEdtiblkpVCO2VglnFvtExUlyC1uXnNPxfGVSFKFMqi4Xn+7oWDSXn9KZdIGFMpCaPrcNf205dCR6l/0JLtyXsU+US5pg1c0ZUxN44ZhjuRBduYfGZdz97a0DOUdzYxCaaQZk1vys0PpfHE/c3LTinet91T0xe3q+BUDa5zWXLbXLvFHRb+eJS51ybLm8qboPX4Q+s3zAkOsuVxoOo2wshrvNYS+TMUYadDwOECUPEg6BsGBzIQyjNANdkmtS1dmsYmDt1gwjNBv2KV77nqHYdLo7XGgsNiPrnhZhy3GxwOp8HMVuqQvU3DAhmGEWqIrs5jV7UOw4HKZG+yQLu3olt9M4uBYtlwmdIENKuyW/SQqzpe5wgZCfy5VccyC02WusTEYEpwkDk5FOG5OccM0KwKHQCgocXCtq8/SIKGi2Rj7qaV/aaaPvjLM1VtTsL8ksj3oSeX/ncAkqX9vH5nFXHcSnM4Sp4mDORIyHdFNHBR3qUJwPLlVjJ5WVMyKdBTOKnHgGWGmiQOPCI5WHMwdoS9zQ2CS4u+nF5xGNwsU55qGicSBI7oyXa44mAu55SPWF3nPllwWSAlMIkQWyA1C/1xzTWASoS/T9KUKcyYSB87o3j8pzjUNE1kgR3QTB7HiwDC5LFCsODBKTqYSmCSyQI7IrQWKFQdGEWLFgRuE/EPfInFgkENZICEwSch0xIpYceCG3LnmgsAkkThwRG4tkDJT9ndgtkpkgTqkEaHVUWAuC7Rm5ig2h/aC7eUjQlP+FF8YGMWWVMF+FqjbVQxedsWG1NwNhS12Ge27fW8YCaX8DeQlC9Sux6ir85VyN9QKH8tHhJf1qBgZpTypS/xkgZSXO+WkX1qCVG9ZoPYYYLT+M4dyfam5xMEKu3R3zsmvblOuJzWXONiXJW2IiuebQLajRIT8w3ErBuTYu3EqzZ61Y7qHrglNcyQMwwP5u3zuDrx/l/n8f2f8TanjA3lx6bM/cSWU6Y5Uwd7Dz8+Jr1wZZXypwjxkpiji6nBlPKm5LJDnKOYcWhlH6gZ7Us6N4h7/pQwr9Qv2pFwSV+8/cyjDSF1iT8ilUezdVZTLpC6xJ2OIqCgY5TypuSzQHMLE4zOV06QeygLNIYrsP3Mox0kV5nV60o0FhlBelyrMW+YjBifklbxUIWSuMIryUqqQl7llPpK3jHx0Hjvbci5Kc1qyn5For2z7TLNQqj1bcdN6jxz4fe61dwdee+vvTMmOCWaqxhaaUBqpbT5SxoJoaf2ck/3a6+0d6dCOmLit456mvrmpNpMoz82OErhAmagfCaZDCanuUEKqO5SQ6g4lpLpDCanuUEKqO5SQ6g4lpLpDCanuUEKqO5SQ6g4lpLpDCanuUEKqO5SQ6g4lpLpDCanuUEKqO5SQ6g4lpLpDCanuUEKqO5SQ6g4lpLpDeZZq6SlMwSssKPw+e0Hwnf8B3mxTT+qpHM4AAAAASUVORK5CYII=" alt="Zupazupazuu logo"></a>
+    <a href="#" class="brand" id="logoHome"><img src="data:image/png;base64,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" alt="Zupazupazuu logo"></a>
     <div class="header-actions" style="display:flex;align-items:center;gap:18px;">
       <div class="lang-toggle" role="group" aria-label="Language switcher">
         <button type="button" id="langEN" data-lang="en">EN</button>
@@ -302,7 +303,6 @@
 <section class="products" id="shop">
   <div class="section-head">
     <h2 class="display" data-i18n="prod.heading">Featured Pieces</h2>
-    <p class="eyebrow" data-i18n="prod.sub">Ready to ship</p>
   </div>
   <div class="filter-bar">
     <span class="filter-label" data-i18n="tabs.collection">Shop by Collection</span>
@@ -436,9 +436,8 @@ const I18N = {
     'footer.contact': 'Contact us on WhatsApp',
     'nav.cart': 'Cart',
     'prod.heading': 'Featured Pieces',
-    'prod.sub': 'Ready to ship',
-    'prod.addToCart': 'Add to Cart',
-    'prod.added': 'Added ✓',
+    'prod.addToCart': 'shop now',
+    'prod.added': 'added ✓',
     'filter.browse': 'Browse',
     'tabs.collection': 'Shop by Collection',
     'cart.title': 'Your Cart',
@@ -480,9 +479,8 @@ const I18N = {
     'footer.contact': 'Hubungi Kami di WhatsApp',
     'nav.cart': 'Keranjang',
     'prod.heading': 'Produk Pilihan',
-    'prod.sub': 'Siap kirim',
-    'prod.addToCart': 'Tambah ke Keranjang',
-    'prod.added': 'Ditambahkan ✓',
+    'prod.addToCart': 'shop now',
+    'prod.added': 'ditambahkan ✓',
     'filter.browse': 'Jelajahi',
     'tabs.collection': 'Belanja Berdasarkan Collection',
     'cart.title': 'Keranjang Anda',
@@ -633,7 +631,10 @@ function renderProducts(){
 
   grid.innerHTML = list.map(p => `
     <div class="prod-card">
-      <div class="prod-media">${ICONS[p.icon]}</div>
+      <div class="prod-media">
+        ${ICONS[p.icon]}
+        <button class="add-btn" data-id="${p.id}">${t('prod.addToCart')}</button>
+      </div>
       <div class="prod-info">
         <div>
           <h3>${pname(p)}</h3>
@@ -641,7 +642,6 @@ function renderProducts(){
         </div>
         <div class="prod-price">${fmt(p.price)}</div>
       </div>
-      <button class="add-btn" data-id="${p.id}">${t('prod.addToCart')}</button>
     </div>
   `).join('');
 
@@ -770,6 +770,18 @@ function closeDrawer(){ drawer.classList.remove('open'); overlay.classList.remov
 document.getElementById('cartToggle').addEventListener('click', openDrawer);
 document.getElementById('drawerClose').addEventListener('click', closeDrawer);
 overlay.addEventListener('click', () => { closeDrawer(); closeModal(); });
+
+// ---------- Logo -> back to home ----------
+document.getElementById('logoHome').addEventListener('click', (e) => {
+  e.preventDefault();
+  activeCollection = 'all';
+  activeDetail = 'all';
+  renderCollectionSelect();
+  renderProducts();
+  closeDrawer();
+  closeModal();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
 // ---------- Checkout modal ----------
 const modalOverlay = document.getElementById('modalOverlay');
