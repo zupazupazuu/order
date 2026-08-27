@@ -275,6 +275,36 @@
     transition:background .25s ease;
   }
   .place-order-btn:hover{background:var(--rose-deep);}
+
+  /* ---------- Size selection popup ---------- */
+  .size-modal{max-width:420px;}
+  .size-modal-product{
+    display:flex;align-items:center;gap:14px;
+    padding-bottom:20px;margin-bottom:20px;border-bottom:1px solid var(--line);
+  }
+  .size-modal-thumb{
+    position:relative;
+    width:64px;height:64px;flex-shrink:0;
+    background:var(--bg-soft);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+  }
+  .size-modal-thumb img{width:100%;height:100%;object-fit:cover;}
+  .size-modal-thumb svg{width:60%;stroke:var(--ink-soft);}
+  .size-modal-name{font-family:'Fraunces',serif;font-size:1.05rem;}
+  .size-modal-label{
+    font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--stone);
+    margin-bottom:12px;
+  }
+  .size-modal-options{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:26px;
+  }
+  .size-opt-btn{
+    padding:13px 8px;border:1px solid var(--line);background:var(--bg);
+    font-size:0.85rem;color:var(--ink);
+    transition:border-color .2s ease, background .2s ease, color .2s ease;
+  }
+  .size-opt-btn:hover{border-color:var(--quartz-deep);}
+  .size-opt-btn.active{background:var(--ink);border-color:var(--ink);color:var(--bg);}
   .payment-note{font-size:0.72rem;color:var(--stone);margin-top:13px;line-height:1.6;border-top:1px dashed var(--line);padding-top:13px;}
   .confirm-view{display:none;text-align:center;padding:16px 4px;}
   .confirm-view.open{display:block;}
@@ -355,6 +385,20 @@
     <button class="checkout-btn" id="checkoutBtn" disabled data-i18n="cart.checkout">Checkout</button>
   </div>
 </aside>
+
+<!-- Size selection popup -->
+<div class="modal-overlay" id="sizeModalOverlay">
+  <div class="modal size-modal">
+    <button class="modal-close" id="sizeModalClose" aria-label="Close">×</button>
+    <div class="size-modal-product">
+      <div class="size-modal-thumb" id="sizeModalThumb"></div>
+      <div class="size-modal-name" id="sizeModalName"></div>
+    </div>
+    <div class="size-modal-label" data-i18n="prod.size">Size</div>
+    <div class="size-modal-options" id="sizeModalOptions"></div>
+    <button class="place-order-btn" id="sizeModalAddBtn" data-i18n="prod.addToCart">shop now</button>
+  </div>
+</div>
 
 <!-- Checkout modal -->
 <div class="modal-overlay" id="modalOverlay">
@@ -464,6 +508,7 @@ const I18N = {
     'prod.addToCart': 'shop now',
     'prod.added': 'added ✓',
     'prod.soldOut': 'sold out',
+    'prod.size': 'Size',
     'filter.browse': 'Browse',
     'tabs.collection': 'Shop by Collection',
     'cart.title': 'Your Cart',
@@ -510,6 +555,7 @@ const I18N = {
     'prod.addToCart': 'shop now',
     'prod.added': 'ditambahkan ✓',
     'prod.soldOut': 'habis',
+    'prod.size': 'Ukuran',
     'filter.browse': 'Jelajahi',
     'tabs.collection': 'Belanja Berdasarkan Collection',
     'cart.title': 'Keranjang Anda',
@@ -599,10 +645,10 @@ let activeDetail = 'all';
 
 // ---------- Product catalogue (bilingual + tagged) ----------
 const PRODUCTS = [
-  { id:'p1', icon:'bracelet', price:65000, stone:'moonstone', function:'healing', collection:'beads-bracelet',
+  { id:'p1', icon:'bracelet', price:65000, stone:'moonstone', function:'healing', collection:'beads-bracelet', sizeType:'bracelet',
     name:{ en:'Moonstone Beaded Bracelet', id:'Gelang Manik Moonstone' },
     mat:{ en:'moonstone, 6mm', id:'moonstone, 6mm' } },
-  { id:'p2', icon:'bracelet', price:55000, stone:'rose-quartz', function:'everyday', collection:'beads-bracelet',
+  { id:'p2', icon:'bracelet', price:55000, stone:'rose-quartz', function:'everyday', collection:'beads-bracelet', sizeType:'bracelet',
     name:{ en:'Rose Quartz Stack', id:'Tumpukan Rose Quartz' },
     mat:{ en:'rose quartz, 6mm', id:'rose quartz, 6mm' } },
   { id:'p3', icon:'necklace', price:145000, stone:'amethyst', function:'statement', collection:'necklace',
@@ -617,20 +663,49 @@ const PRODUCTS = [
   { id:'p6', icon:'earring', price:48000, stone:'clear-quartz', function:'healing', collection:'earrings-misc',
     name:{ en:'Clear Quartz Point Studs', id:'Anting Kristal Bening' },
     mat:{ en:'clear quartz, silver', id:'kristal bening, perak' } },
-  { id:'p7', icon:'bangle', price:165000, stone:'citrine', function:'statement', collection:'bangle-bracelet',
+  { id:'p7', icon:'bangle', price:165000, stone:'citrine', function:'statement', collection:'bangle-bracelet', sizeType:'bangle',
     name:{ en:'Citrine Cuff Bangle', id:'Bangle Sitrin' },
     mat:{ en:'citrine, brass cuff', id:'sitrin, bangle kuningan' } },
-  { id:'p8', icon:'ring', price:95000, stone:'garnet', function:'statement', collection:'crystal-ring',
+  { id:'p8', icon:'ring', price:95000, stone:'garnet', function:'statement', collection:'crystal-ring', sizeType:'ring',
     name:{ en:'Garnet Stacking Ring', id:'Cincin Tumpuk Garnet' },
     mat:{ en:'garnet, gold-fill band', id:'garnet, lingkar gold-fill' } },
   { id:'p9', icon:'special', price:195000, stone:'amethyst', function:'gift', collection:'specials',
     name:{ en:'Crystal Gift Box Set', id:'Set Kotak Hadiah Kristal' },
     mat:{ en:'mixed stones, gift-ready box', id:'campuran batu, kotak siap hadiah' } },
-  { id:'sku-1223456', sku:'1223456', collection:'bangle-bracelet', detail:'bangle-4mm', price:22000, stock:1,
+  { id:'sku-1223456', sku:'1223456', collection:'bangle-bracelet', detail:'bangle-4mm', price:22000, stock:1, sizeType:'bracelet',
     photo:'https://github.com/ceozupazupazuu/photo/blob/main/products/1223456.jpg?raw=true',
     name:{ en:'Moonstone Beaded Bracelet', id:'Moonstone Beaded Bracelet' },
     mat:{ en:'Happy shopping :)', id:'Happy shopping :)' } }
 ];
+
+// ---------- Size variations (rings, bangles, bracelets only) ----------
+const SIZE_OPTIONS = {
+  bracelet: [
+    { key:'s', en:'S (15cm)', id:'S (15cm)' },
+    { key:'m', en:'M (16cm)', id:'M (16cm)' },
+    { key:'l', en:'L (17cm)', id:'L (17cm)' }
+  ],
+  bangle: [
+    { key:'54mm', en:'54mm', id:'54mm' },
+    { key:'58mm', en:'58mm', id:'58mm' },
+    { key:'62mm', en:'62mm', id:'62mm' }
+  ],
+  ring: [
+    { key:'5', en:'US 5', id:'US 5' },
+    { key:'6', en:'US 6', id:'US 6' },
+    { key:'7', en:'US 7', id:'US 7' },
+    { key:'8', en:'US 8', id:'US 8' },
+    { key:'9', en:'US 9', id:'US 9' }
+  ]
+};
+
+let modalSizeChoice = null; // currently selected size button inside the popup
+
+function sizeLabel(p, sizeKey){
+  if(!p.sizeType || !sizeKey) return '';
+  const opt = SIZE_OPTIONS[p.sizeType].find(o => o.key === sizeKey);
+  return opt ? opt[currentLang] : '';
+}
 
 const ICONS = {
   bracelet: '<svg viewBox="0 0 100 100" fill="none" stroke-width="1.4"><circle cx="30" cy="50" r="9"/><circle cx="50" cy="50" r="9"/><circle cx="70" cy="50" r="9"/><path d="M20 50 h60" stroke-dasharray="1 6"/></svg>',
@@ -691,7 +766,12 @@ function renderProducts(){
 
   grid.querySelectorAll('.add-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      addToCart(btn.dataset.id);
+      const p = PRODUCTS.find(p => p.id === btn.dataset.id);
+      if (p.sizeType) {
+        openSizeModal(p.id);
+        return;
+      }
+      addToCart(btn.dataset.id, null);
       btn.textContent = t('prod.added');
       btn.classList.add('added');
       setTimeout(() => { btn.textContent = t('prod.addToCart'); btn.classList.remove('added'); }, 1200);
@@ -739,25 +819,88 @@ document.getElementById('detailSelect').addEventListener('change', (e) => {
   renderProducts();
 });
 
-function addToCart(id){
-  cart[id] = (cart[id] || 0) + 1;
+function makeCartKey(id, size){ return size ? `${id}::${size}` : id; }
+function parseCartKey(key){
+  const [id, size] = key.split('::');
+  return { id, size: size || null };
+}
+
+// ---------- Size selection popup ----------
+const sizeModalOverlay = document.getElementById('sizeModalOverlay');
+let sizeModalProductId = null;
+
+function openSizeModal(productId){
+  const p = PRODUCTS.find(p => p.id === productId);
+  if (!p || !p.sizeType) return;
+
+  sizeModalProductId = productId;
+  const opts = SIZE_OPTIONS[p.sizeType];
+  modalSizeChoice = opts[0].key;
+
+  document.getElementById('sizeModalName').textContent = pname(p);
+  const thumb = document.getElementById('sizeModalThumb');
+  thumb.innerHTML = p.photo
+    ? `<img src="${p.photo}" alt="${pname(p)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+       <div class="media-fallback" style="display:none;">${ICONS[p.icon || 'bracelet']}</div>`
+    : ICONS[p.icon || 'bracelet'];
+
+  renderSizeModalOptions(opts);
+
+  document.getElementById('sizeModalAddBtn').textContent = t('prod.addToCart');
+  sizeModalOverlay.classList.add('open');
+}
+
+function renderSizeModalOptions(opts){
+  const wrap = document.getElementById('sizeModalOptions');
+  wrap.innerHTML = opts.map(o =>
+    `<button type="button" class="size-opt-btn${o.key === modalSizeChoice ? ' active' : ''}" data-key="${o.key}">${o[currentLang]}</button>`
+  ).join('');
+
+  wrap.querySelectorAll('.size-opt-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      modalSizeChoice = btn.dataset.key;
+      wrap.querySelectorAll('.size-opt-btn').forEach(b => b.classList.toggle('active', b.dataset.key === modalSizeChoice));
+    });
+  });
+}
+
+function closeSizeModal(){
+  sizeModalOverlay.classList.remove('open');
+  sizeModalProductId = null;
+}
+
+document.getElementById('sizeModalClose').addEventListener('click', closeSizeModal);
+sizeModalOverlay.addEventListener('click', (e) => { if (e.target === sizeModalOverlay) closeSizeModal(); });
+
+document.getElementById('sizeModalAddBtn').addEventListener('click', () => {
+  if (!sizeModalProductId) return;
+  addToCart(sizeModalProductId, modalSizeChoice);
+  const addBtn = document.getElementById('sizeModalAddBtn');
+  addBtn.textContent = t('prod.added');
+  setTimeout(() => { closeSizeModal(); }, 500);
+});
+
+function addToCart(id, size){
+  const key = makeCartKey(id, size);
+  cart[key] = (cart[key] || 0) + 1;
   renderCart();
 }
-function changeQty(id, delta){
-  if(!cart[id]) return;
-  cart[id] += delta;
-  if(cart[id] <= 0) delete cart[id];
+function changeQty(key, delta){
+  if(!cart[key]) return;
+  cart[key] += delta;
+  if(cart[key] <= 0) delete cart[key];
   renderCart();
 }
-function removeItem(id){
-  delete cart[id];
+function removeItem(key){
+  delete cart[key];
   renderCart();
 }
 function cartCount(){
   return Object.values(cart).reduce((a,b) => a+b, 0);
 }
 function cartSubtotal(){
-  return Object.entries(cart).reduce((sum,[id,qty]) => {
+  return Object.entries(cart).reduce((sum,[key,qty]) => {
+    const { id } = parseCartKey(key);
     const p = PRODUCTS.find(p => p.id === id);
     return sum + (p ? p.price*qty : 0);
   }, 0);
@@ -771,19 +914,21 @@ function renderCart(){
   if(entries.length === 0){
     body.innerHTML = `<div class="empty-cart">${t('cart.empty')}</div>`;
   } else {
-    body.innerHTML = entries.map(([id,qty]) => {
+    body.innerHTML = entries.map(([key,qty]) => {
+      const { id, size } = parseCartKey(key);
       const p = PRODUCTS.find(p => p.id === id);
+      const sizeText = size ? ` — ${sizeLabel(p, size)}` : '';
       return `
         <div class="cart-item">
-          <div class="thumb">${ICONS[p.icon]}</div>
+          <div class="thumb">${ICONS[p.icon || 'bracelet']}</div>
           <div class="cart-item-info">
-            <h4>${pname(p)}</h4>
+            <h4>${pname(p)}${sizeText}</h4>
             <div class="mat">${pmat(p)}</div>
             <div class="qty-row">
-              <button data-act="dec" data-id="${id}" aria-label="${t('cart.decrease')}">−</button>
+              <button data-act="dec" data-key="${key}" aria-label="${t('cart.decrease')}">−</button>
               <span>${qty}</span>
-              <button data-act="inc" data-id="${id}" aria-label="${t('cart.increase')}">+</button>
-              <button class="remove-btn" data-act="rm" data-id="${id}">${t('cart.remove')}</button>
+              <button data-act="inc" data-key="${key}" aria-label="${t('cart.increase')}">+</button>
+              <button class="remove-btn" data-act="rm" data-key="${key}">${t('cart.remove')}</button>
             </div>
           </div>
           <div class="cart-item-price">${fmt(p.price*qty)}</div>
@@ -793,10 +938,10 @@ function renderCart(){
 
     body.querySelectorAll('[data-act]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const id = btn.dataset.id;
-        if(btn.dataset.act === 'inc') changeQty(id, 1);
-        if(btn.dataset.act === 'dec') changeQty(id, -1);
-        if(btn.dataset.act === 'rm') removeItem(id);
+        const key = btn.dataset.key;
+        if(btn.dataset.act === 'inc') changeQty(key, 1);
+        if(btn.dataset.act === 'dec') changeQty(key, -1);
+        if(btn.dataset.act === 'rm') removeItem(key);
       });
     });
   }
@@ -845,9 +990,11 @@ document.getElementById('checkoutBtn').addEventListener('click', () => { closeDr
 document.getElementById('modalClose').addEventListener('click', closeModal);
 
 function buildSummary(){
-  const rows = Object.entries(cart).map(([id,qty]) => {
+  const rows = Object.entries(cart).map(([key,qty]) => {
+    const { id, size } = parseCartKey(key);
     const p = PRODUCTS.find(p => p.id === id);
-    return `<div class="row"><span>${pname(p)} × ${qty}</span><span>${fmt(p.price*qty)}</span></div>`;
+    const sizeText = size ? ` — ${sizeLabel(p, size)}` : '';
+    return `<div class="row"><span>${pname(p)}${sizeText} × ${qty}</span><span>${fmt(p.price*qty)}</span></div>`;
   }).join('');
   const subtotal = cartSubtotal();
   document.getElementById('modalSummary').innerHTML = `
@@ -1110,9 +1257,11 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     district: getDistrictValue(),
     village: getVillageValue(),
     postal_code: document.getElementById('zip').value,
-    items: Object.entries(cart).map(([id, qty]) => {
+    items: Object.entries(cart).map(([key, qty]) => {
+      const { id, size } = parseCartKey(key);
       const p = PRODUCTS.find(p => p.id === id);
-      return { id, name: p.name.en, qty, price: p.price };
+      const sizeText = size ? sizeLabel(p, size) : null;
+      return { id, name: p.name.en + (sizeText ? ` (${sizeText})` : ''), size: sizeText, qty, price: p.price };
     }),
     subtotal,
     total: subtotal, // shipping isn't collected here — buyer pays JNT separately
@@ -1277,6 +1426,11 @@ function applyLanguage(lang){
   renderCollectionSelect();
   renderProducts();
   renderCart();
+
+  if (sizeModalProductId) {
+    const p = PRODUCTS.find(p => p.id === sizeModalProductId);
+    if (p) renderSizeModalOptions(SIZE_OPTIONS[p.sizeType]);
+  }
 }
 
 document.getElementById('langEN').addEventListener('click', () => applyLanguage('en'));
