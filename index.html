@@ -299,17 +299,26 @@
     margin-bottom:12px;
   }
   .size-modal-options{
-    display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:26px;
-    max-height:280px;overflow-y:auto;padding-right:4px;
+    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:26px;
+    max-height:360px;overflow-y:auto;padding-right:4px;
   }
   .size-opt-btn{
-    padding:11px 8px;border:1px solid var(--line);background:var(--bg);
-    font-size:0.8rem;color:var(--ink);line-height:1.3;
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    padding:8px 6px 10px;border:1px solid var(--line);background:var(--bg);
+    font-size:0.74rem;color:var(--ink);line-height:1.25;text-align:center;
     transition:border-color .2s ease, background .2s ease, color .2s ease;
   }
+  .size-opt-thumb{
+    width:100%;aspect-ratio:1/1;background:var(--bg-soft);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+  }
+  .size-opt-thumb img{width:100%;height:100%;object-fit:cover;}
+  .size-opt-thumb svg{width:55%;stroke:var(--ink-soft);}
   .size-opt-btn:hover{border-color:var(--quartz-deep);}
   .size-opt-btn.active{background:var(--ink);border-color:var(--ink);color:var(--bg);}
-  .size-opt-btn.sold-out{opacity:0.4;text-decoration:line-through;cursor:not-allowed;}
+  .size-opt-btn.active .size-opt-thumb{border-color:var(--bg);}
+  .size-opt-btn.sold-out{opacity:0.4;cursor:not-allowed;}
+  .size-opt-btn.sold-out .size-opt-label{text-decoration:line-through;}
   .size-opt-btn.sold-out:hover{border-color:var(--line);}
   .payment-note{font-size:0.72rem;color:var(--stone);margin-top:13px;line-height:1.6;border-top:1px dashed var(--line);padding-top:13px;}
   .confirm-view{display:none;text-align:center;padding:16px 4px;}
@@ -842,10 +851,21 @@ function openSizeModal(groupKey){
 
 function renderSizeModalOptions(group){
   const wrap = document.getElementById('sizeModalOptions');
+  const fallbackIcon = ICONS[group.icon || 'bracelet'];
+
   wrap.innerHTML = group.variants.map(v => {
     const label = v.variasi || pname(group);
     const soldOut = v.stock <= 0;
-    return `<button type="button" class="size-opt-btn${v.id === modalSelectedVariantId ? ' active' : ''}${soldOut ? ' sold-out' : ''}" data-id="${v.id}" ${soldOut ? 'disabled' : ''}>${escapeHtmlText(label)}${soldOut ? ' · ' + t('prod.soldOut') : ''}</button>`;
+    // Tiap varian pakai fotonya sendiri kalau ada; kalau tidak, pakai foto etalase (group), baru fallback ikon.
+    const photoSrc = v.photo || group.photo;
+    const thumb = photoSrc
+      ? `<img src="${photoSrc}" alt="${escapeHtmlText(label)}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+         <div class="media-fallback" style="display:none;">${fallbackIcon}</div>`
+      : fallbackIcon;
+    return `<button type="button" class="size-opt-btn${v.id === modalSelectedVariantId ? ' active' : ''}${soldOut ? ' sold-out' : ''}" data-id="${v.id}" ${soldOut ? 'disabled' : ''}>
+      <div class="size-opt-thumb">${thumb}</div>
+      <span class="size-opt-label">${escapeHtmlText(label)}${soldOut ? ' · ' + t('prod.soldOut') : ''}</span>
+    </button>`;
   }).join('');
 
   wrap.querySelectorAll('.size-opt-btn:not(:disabled)').forEach(btn => {
