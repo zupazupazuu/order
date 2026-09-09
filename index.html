@@ -299,15 +299,18 @@
     margin-bottom:12px;
   }
   .size-modal-options{
-    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:26px;
+    display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:26px;
+    max-height:280px;overflow-y:auto;padding-right:4px;
   }
   .size-opt-btn{
-    padding:13px 8px;border:1px solid var(--line);background:var(--bg);
-    font-size:0.85rem;color:var(--ink);
+    padding:11px 8px;border:1px solid var(--line);background:var(--bg);
+    font-size:0.8rem;color:var(--ink);line-height:1.3;
     transition:border-color .2s ease, background .2s ease, color .2s ease;
   }
   .size-opt-btn:hover{border-color:var(--quartz-deep);}
   .size-opt-btn.active{background:var(--ink);border-color:var(--ink);color:var(--bg);}
+  .size-opt-btn.sold-out{opacity:0.4;text-decoration:line-through;cursor:not-allowed;}
+  .size-opt-btn.sold-out:hover{border-color:var(--line);}
   .payment-note{font-size:0.72rem;color:var(--stone);margin-top:13px;line-height:1.6;border-top:1px dashed var(--line);padding-top:13px;}
   .confirm-view{display:none;text-align:center;padding:16px 4px;}
   .confirm-view.open{display:block;}
@@ -522,6 +525,7 @@ const I18N = {
     'prod.addToCart': 'buy',
     'prod.added': 'added ✓',
     'prod.soldOut': 'sold out',
+    'prod.startingFrom': 'from',
     'prod.size': 'Size',
     'search.placeholder': 'Search products...',
     'tabs.collection': 'Shop by Collection',
@@ -570,6 +574,7 @@ const I18N = {
     'prod.addToCart': 'beli',
     'prod.added': 'ditambahkan ✓',
     'prod.soldOut': 'habis',
+    'prod.startingFrom': 'mulai',
     'prod.size': 'Ukuran',
     'search.placeholder': 'cari yang kamu mau disini',
     'tabs.collection': 'mau belanja apa?',
@@ -635,9 +640,46 @@ function mapBackendProduct(p){
     icon: 'bracelet',
     photo: p.photo_url ? (API_BASE + p.photo_url) : null,
     collection: (p.collection || '').trim(),
+    // Karakter word-joiner tak kasat mata kadang ikut ter-copy dari spreadsheet — dibersihkan di sini.
+    variasi: (p.variasi || '').replace(/[\u2060\u200B]/g, '').trim(),
     name: { en: p.name, id: p.name },
     mat: { en: p.description || '', id: p.description || '' }
   };
+}
+
+// Mengelompokkan produk dengan NAMA yang sama jadi satu kartu etalase.
+// Ini penting untuk produk hasil import Excel yang tiap variasinya (ukuran, dsb)
+// tersimpan sebagai baris/produk terpisah di backend — supaya tidak muncul
+// sebagai kartu duplikat, melainkan satu kartu dengan popup pilihan variasi.
+let PRODUCT_GROUPS = [];
+
+function buildProductGroups(){
+  const groups = new Map();
+  PRODUCTS.forEach(p => {
+    const key = pname(p).trim().toLowerCase();
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(p);
+  });
+
+  PRODUCT_GROUPS = Array.from(groups.values()).map(variants => {
+    const withPhoto = variants.find(v => v.photo) || variants[0];
+    const prices = variants.map(v => v.price);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const allSoldOut = variants.every(v => v.stock <= 0);
+    return {
+      key: variants[0].id,
+      name: variants[0].name,
+      mat: variants[0].mat,
+      collection: variants[0].collection,
+      photo: withPhoto.photo,
+      icon: variants[0].icon,
+      price: minPrice,
+      priceVaries: minPrice !== maxPrice,
+      soldOut: allSoldOut,
+      variants,
+    };
+  });
 }
 
 async function loadProducts(){
@@ -651,6 +693,7 @@ async function loadProducts(){
   } catch (err) {
     PRODUCTS = [];
   }
+  buildProductGroups();
   productsLoading = false;
   renderCollectionSelect();
   renderProducts();
@@ -701,7 +744,7 @@ function renderProducts(){
     return;
   }
 
-  let list = PRODUCTS;
+  let list = PRODUCT_GROUPS;
 
   if (activeCollection !== 'all') {
     list = list.filter(p => p.collection === activeCollection);
@@ -720,15 +763,17 @@ function renderProducts(){
   }
 
   grid.innerHTML = list.map(p => {
-    const soldOut = p.stock !== undefined && p.stock <= 0;
+    const soldOut = p.soldOut;
     const fallbackIcon = ICONS[p.icon || 'bracelet'];
     const media = p.photo
       ? `<img src="${p.photo}" alt="${pname(p)}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
          <div class="media-fallback" style="display:none;">${fallbackIcon}</div>`
       : fallbackIcon;
+    const hasVariants = p.variants.length > 1;
     const btn = soldOut
       ? `<button class="add-btn sold-out" disabled>${t('prod.soldOut')}</button>`
-      : `<button class="add-btn" data-id="${p.id}">${t('prod.addToCart')}</button>`;
+      : `<button class="add-btn" data-group="${p.key}" data-has-variants="${hasVariants}">${t('prod.addToCart')}</button>`;
+    const priceLabel = p.priceVaries ? `${t('prod.startingFrom')} ${fmt(p.price)}` : fmt(p.price);
     return `
     <div class="prod-card">
       <div class="prod-media${soldOut ? ' is-sold-out' : ''}">
@@ -739,7 +784,7 @@ function renderProducts(){
         <div>
           <h3>${pname(p)}</h3>
         </div>
-        <div class="prod-price">${fmt(p.price)}</div>
+        <div class="prod-price">${priceLabel}</div>
       </div>
     </div>
   `;
@@ -747,7 +792,16 @@ function renderProducts(){
 
   grid.querySelectorAll('.add-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      addToCart(btn.dataset.id, null);
+      const groupKey = btn.dataset.group;
+      const group = PRODUCT_GROUPS.find(g => g.key === groupKey);
+      if (!group) return;
+
+      if (btn.dataset.hasVariants === 'true') {
+        openSizeModal(groupKey);
+        return;
+      }
+
+      addToCart(group.variants[0].id, null);
       btn.textContent = t('prod.added');
       btn.classList.add('added');
       setTimeout(() => { btn.textContent = t('prod.addToCart'); btn.classList.remove('added'); }, 1200);
@@ -761,11 +815,68 @@ function parseCartKey(key){
   return { id, size: size || null };
 }
 
+let modalGroupKey = null;
+let modalSelectedVariantId = null;
+
+function openSizeModal(groupKey){
+  const group = PRODUCT_GROUPS.find(g => g.key === groupKey);
+  if (!group) return;
+
+  modalGroupKey = groupKey;
+  const firstAvailable = group.variants.find(v => v.stock > 0) || group.variants[0];
+  modalSelectedVariantId = firstAvailable.id;
+
+  document.getElementById('sizeModalName').textContent = pname(group);
+  const thumb = document.getElementById('sizeModalThumb');
+  const fallbackIcon = ICONS[group.icon || 'bracelet'];
+  thumb.innerHTML = group.photo
+    ? `<img src="${group.photo}" alt="${pname(group)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+       <div class="media-fallback" style="display:none;">${fallbackIcon}</div>`
+    : fallbackIcon;
+
+  renderSizeModalOptions(group);
+
+  document.getElementById('sizeModalAddBtn').textContent = t('prod.addToCart');
+  document.getElementById('sizeModalOverlay').classList.add('open');
+}
+
+function renderSizeModalOptions(group){
+  const wrap = document.getElementById('sizeModalOptions');
+  wrap.innerHTML = group.variants.map(v => {
+    const label = v.variasi || pname(group);
+    const soldOut = v.stock <= 0;
+    return `<button type="button" class="size-opt-btn${v.id === modalSelectedVariantId ? ' active' : ''}${soldOut ? ' sold-out' : ''}" data-id="${v.id}" ${soldOut ? 'disabled' : ''}>${escapeHtmlText(label)}${soldOut ? ' · ' + t('prod.soldOut') : ''}</button>`;
+  }).join('');
+
+  wrap.querySelectorAll('.size-opt-btn:not(:disabled)').forEach(btn => {
+    btn.addEventListener('click', () => {
+      modalSelectedVariantId = btn.dataset.id;
+      wrap.querySelectorAll('.size-opt-btn').forEach(b => b.classList.toggle('active', b.dataset.id === modalSelectedVariantId));
+    });
+  });
+}
+
+function escapeHtmlText(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 function closeSizeModal(){
   document.getElementById('sizeModalOverlay').classList.remove('open');
+  modalGroupKey = null;
+  modalSelectedVariantId = null;
 }
 document.getElementById('sizeModalClose').addEventListener('click', closeSizeModal);
 document.getElementById('sizeModalOverlay').addEventListener('click', (e) => { if (e.target.id === 'sizeModalOverlay') closeSizeModal(); });
+
+document.getElementById('sizeModalAddBtn').addEventListener('click', () => {
+  if (!modalSelectedVariantId) return;
+  addToCart(modalSelectedVariantId, null);
+  const addBtn = document.getElementById('sizeModalAddBtn');
+  addBtn.textContent = t('prod.added');
+  setTimeout(() => { closeSizeModal(); }, 500);
+});
 
 function addToCart(id, size){
   const key = makeCartKey(id, size);
