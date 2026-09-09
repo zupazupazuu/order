@@ -648,6 +648,9 @@ function mapBackendProduct(p){
     stock: Number(p.stock),
     icon: 'bracelet',
     photo: p.photo_url ? (API_BASE + p.photo_url) : null,
+    isCover: !!p.is_cover,
+    // Foto cover khusus (bisa diupload terpisah dari foto varian ini sendiri lewat Panel Toko).
+    coverPhoto: p.cover_photo_url ? (API_BASE + p.cover_photo_url) : null,
     collection: (p.collection || '').trim(),
     // Karakter word-joiner tak kasat mata kadang ikut ter-copy dari spreadsheet — dibersihkan di sini.
     variasi: (p.variasi || '').replace(/[\u2060\u200B]/g, '').trim(),
@@ -671,7 +674,15 @@ function buildProductGroups(){
   });
 
   PRODUCT_GROUPS = Array.from(groups.values()).map(variants => {
-    const withPhoto = variants.find(v => v.photo) || variants[0];
+    // Prioritas foto etalase:
+    //  1) varian yang ditandai admin sebagai cover — pakai foto cover khususnya (atau foto
+    //     variannya sendiri kalau admin memilih "jadikan cover" tanpa upload baru).
+    //  2) kalau belum ada yang ditandai cover, pakai varian pertama yang kebetulan punya foto.
+    const coverHolder = variants.find(v => v.isCover);
+    const coverImage = coverHolder ? (coverHolder.coverPhoto || coverHolder.photo) : null;
+    const fallbackPhoto = (variants.find(v => v.photo) || variants[0]).photo;
+    const groupPhoto = coverImage || fallbackPhoto;
+
     const prices = variants.map(v => v.price);
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
@@ -681,7 +692,7 @@ function buildProductGroups(){
       name: variants[0].name,
       mat: variants[0].mat,
       collection: variants[0].collection,
-      photo: withPhoto.photo,
+      photo: groupPhoto,
       icon: variants[0].icon,
       price: minPrice,
       priceVaries: minPrice !== maxPrice,
