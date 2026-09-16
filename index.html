@@ -868,6 +868,14 @@ function renderCollectionSections(){
     byCollection.get(key).push(p);
   });
 
+  // Urutkan abjad, tapi grup "produk lainnya" (tanpa nama koleksi) selalu ditaruh paling akhir.
+  const uncategorizedLabel = t('tabs.uncategorized');
+  order.sort((a, b) => {
+    if (a === uncategorizedLabel) return 1;
+    if (b === uncategorizedLabel) return -1;
+    return a.localeCompare(b, undefined, { sensitivity: 'base' });
+  });
+
   if (order.length === 0) {
     container.innerHTML = `<p style="color:var(--stone);font-size:0.9rem;">${t('filter.noResults')}</p>`;
     return;
