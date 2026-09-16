@@ -190,7 +190,8 @@
   .prod-info{padding-top:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
   .prod-info h3{font-family:'Fraunces',serif;font-weight:500;font-size:1rem;line-height:1.25;margin-bottom:3px;min-height:calc(1.25em * 2);}
   .prod-info .mat{font-size:0.75rem;color:var(--stone);line-height:1.35;min-height:calc(1.35em * 2);}
-  .prod-price{font-family:'Fraunces',serif;font-size:0.96rem;white-space:nowrap;}
+  .prod-price{font-family:'Fraunces',serif;font-size:0.96rem;text-align:right;}
+  .prod-price .price-usd{display:block;font-family:'Jost',sans-serif;font-size:0.72rem;color:var(--stone);margin-top:2px;}
   .add-btn{
     position:absolute;left:12px;right:12px;bottom:12px;z-index:2;
     padding:11px;border:1px solid var(--ink);background:transparent;
@@ -646,6 +647,9 @@ let productsLoading = true;
 let activeCollection = 'all';
 let currentPage = 1;
 const PRODUCTS_PER_PAGE = 30;
+// Kurs IDR -> USD, dipakai untuk tampilan harga ganda di kartu produk (mis. "Rp160.000 / $10").
+// Ini nilai tetap (bukan live rate) - update manual kalau kurs sudah jauh berubah.
+const IDR_TO_USD_RATE = 16000;
 
 function mapBackendProduct(p){
   return {
@@ -760,6 +764,17 @@ const ICONS = {
 let cart = {}; // { productId: qty }
 
 function fmt(n){ return Math.round(n/1000).toLocaleString('id-ID'); }
+
+// Format harga ganda untuk kartu produk: IDR di baris utama, USD lebih kecil di
+// bawahnya (supaya tidak overflow di kartu sempit / HP untuk harga yang besar).
+// USD dihitung dari IDR_TO_USD_RATE, dibulatkan ke bilangan bulat kalau pas,
+// atau 2 desimal kalau tidak.
+function fmtDual(n){
+  const idr = `Rp${Math.round(n).toLocaleString('id-ID')}`;
+  const usdValue = n / IDR_TO_USD_RATE;
+  const usd = Number.isInteger(usdValue) ? usdValue : usdValue.toFixed(2);
+  return `${idr}<span class="price-usd">$${usd}</span>`;
+}
 function pname(p){ return p.name[currentLang]; }
 function pmat(p){ return p.mat[currentLang]; }
 
@@ -808,7 +823,7 @@ function renderProducts(){
     const btn = soldOut
       ? `<button class="add-btn sold-out" disabled>${t('prod.soldOut')}</button>`
       : `<button class="add-btn" data-group="${p.key}" data-has-variants="${hasVariants}">${t('prod.addToCart')}</button>`;
-    const priceLabel = p.priceVaries ? `${t('prod.startingFrom')} ${fmt(p.price)}` : fmt(p.price);
+    const priceLabel = p.priceVaries ? `${t('prod.startingFrom')} ${fmtDual(p.price)}` : fmtDual(p.price);
     return `
     <div class="prod-card">
       <div class="prod-media${soldOut ? ' is-sold-out' : ''}">
