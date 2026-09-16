@@ -120,6 +120,19 @@
   .filter-bar .filter-label{
     font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--stone);
   }
+  .pagination{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    margin-top:44px;flex-wrap:wrap;
+  }
+  .page-btn{
+    min-width:38px;height:38px;padding:0 10px;border:1px solid var(--line);background:var(--bg);
+    font-family:'Jost',sans-serif;font-size:0.85rem;color:var(--ink);
+    transition:border-color .2s ease, background .2s ease, color .2s ease;
+  }
+  .page-btn:hover:not(:disabled){border-color:var(--quartz-deep);}
+  .page-btn.active{background:var(--ink);border-color:var(--ink);color:var(--bg);}
+  .page-btn:disabled{opacity:0.35;cursor:not-allowed;}
+  .page-ellipsis{color:var(--stone);padding:0 4px;font-size:0.85rem;}
   .collection-select{
     appearance:none;-webkit-appearance:none;-moz-appearance:none;
     font-family:'Jost',sans-serif;font-size:0.85rem;color:var(--ink);
@@ -383,6 +396,7 @@
     <select class="collection-select" id="collectionSelect" aria-label="Filter by collection"></select>
   </div>
   <div class="prod-grid" id="prodGrid"></div>
+  <div class="pagination" id="pagination"></div>
 </section>
 
 <footer id="footer">
@@ -619,6 +633,7 @@ function t(key){ return I18N[currentLang][key] || key; }
 let searchQuery = '';
 document.getElementById('searchInput').addEventListener('input', (e) => {
   searchQuery = e.target.value.trim().toLowerCase();
+  currentPage = 1;
   renderProducts();
 });
 
@@ -629,6 +644,8 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
 let PRODUCTS = [];
 let productsLoading = true;
 let activeCollection = 'all';
+let currentPage = 1;
+const PRODUCTS_PER_PAGE = 10;
 
 function mapBackendProduct(p){
   return {
@@ -727,6 +744,7 @@ function renderCollectionSelect(){
 
 document.getElementById('collectionSelect').addEventListener('change', (e) => {
   activeCollection = e.target.value;
+  currentPage = 1;
   renderProducts();
 });
 
@@ -768,10 +786,18 @@ function renderProducts(){
 
   if(list.length === 0){
     grid.innerHTML = `<p style="grid-column:1/-1;color:var(--stone);font-size:0.9rem;">${t('filter.noResults')}</p>`;
+    document.getElementById('pagination').innerHTML = '';
     return;
   }
 
-  grid.innerHTML = list.map(p => {
+  const totalPages = Math.max(1, Math.ceil(list.length / PRODUCTS_PER_PAGE));
+  if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
+
+  const startIdx = (currentPage - 1) * PRODUCTS_PER_PAGE;
+  const pageItems = list.slice(startIdx, startIdx + PRODUCTS_PER_PAGE);
+
+  grid.innerHTML = pageItems.map(p => {
     const soldOut = p.soldOut;
     const fallbackIcon = ICONS[p.icon || 'bracelet'];
     const media = p.photo
@@ -816,6 +842,49 @@ function renderProducts(){
       setTimeout(() => { btn.textContent = t('prod.addToCart'); btn.classList.remove('added'); }, 1200);
     });
   });
+
+  renderPagination(totalPages);
+}
+
+function renderPagination(totalPages){
+  const el = document.getElementById('pagination');
+  if (totalPages <= 1) { el.innerHTML = ''; return; }
+
+  // Selalu tampilkan halaman pertama, terakhir, halaman aktif ± 1, sisanya diringkas dengan "...".
+  const pages = [];
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 1) {
+      pages.push(i);
+    } else if (pages[pages.length - 1] !== '...') {
+      pages.push('...');
+    }
+  }
+
+  const pageButtons = pages.map(p =>
+    p === '...'
+      ? `<span class="page-ellipsis">...</span>`
+      : `<button class="page-btn${p === currentPage ? ' active' : ''}" data-page="${p}">${p}</button>`
+  ).join('');
+
+  el.innerHTML = `
+    <button class="page-btn" id="pagePrev" ${currentPage === 1 ? 'disabled' : ''} aria-label="Previous page">&lsaquo;</button>
+    ${pageButtons}
+    <button class="page-btn" id="pageNext" ${currentPage === totalPages ? 'disabled' : ''} aria-label="Next page">&rsaquo;</button>
+  `;
+
+  el.querySelectorAll('.page-btn[data-page]').forEach(btn => {
+    btn.addEventListener('click', () => { goToPage(Number(btn.dataset.page)); });
+  });
+  const prevBtn = document.getElementById('pagePrev');
+  const nextBtn = document.getElementById('pageNext');
+  if (prevBtn) prevBtn.addEventListener('click', () => goToPage(currentPage - 1));
+  if (nextBtn) nextBtn.addEventListener('click', () => goToPage(currentPage + 1));
+}
+
+function goToPage(page){
+  currentPage = page;
+  renderProducts();
+  document.getElementById('shop').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function makeCartKey(id, size){ return size ? `${id}::${size}` : id; }
