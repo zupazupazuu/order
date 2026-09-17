@@ -182,6 +182,17 @@
     display:inline-block;transition:transform .2s ease;
   }
   .view-more-btn:hover .arrow{transform:translateX(4px);}
+  .back-link{
+    display:flex;align-items:center;gap:8px;
+    background:none;border:none;color:var(--stone);
+    font-family:'Jost',sans-serif;font-size:0.85rem;letter-spacing:0.03em;
+    padding:0;margin-bottom:24px;cursor:pointer;transition:color .2s ease;
+  }
+  .back-link:hover{color:var(--ink);}
+  .back-link .arrow-back{
+    display:inline-block;transition:transform .2s ease;
+  }
+  .back-link:hover .arrow-back{transform:translateX(-4px);}
   .prod-card{display:flex;flex-direction:column;}
   .prod-media{
     position:relative;
@@ -416,6 +427,9 @@
     <span class="filter-label" data-i18n="tabs.collection">Shop by Collection</span>
     <select class="collection-select" id="collectionSelect" aria-label="Filter by collection"></select>
   </div>
+  <button type="button" class="back-link" id="backToHomeBtn" style="display:none;">
+    <span class="arrow-back">&larr;</span> <span data-i18n="collections.back">kembali</span>
+  </button>
   <div class="collection-sections" id="collectionSections"></div>
   <div class="prod-grid" id="prodGrid"></div>
   <div class="pagination" id="pagination"></div>
@@ -568,6 +582,7 @@ const I18N = {
     'tabs.collection': 'Shop by Collection',
     'tabs.allCollections': 'All',
     'collections.viewMore': 'view more',
+    'collections.back': 'back',
     'tabs.uncategorized': 'Other pieces',
     'cart.title': 'Your Cart',
     'cart.subtotal': 'Subtotal',
@@ -616,6 +631,7 @@ const I18N = {
     'tabs.collection': 'mau belanja apa?',
     'tabs.allCollections': 'Semua',
     'collections.viewMore': 'lihat selengkapnya',
+    'collections.back': 'kembali',
     'tabs.uncategorized': 'Produk lainnya',
     'cart.title': 'keranjang kamu',
     'cart.subtotal': 'total bayarnya',
@@ -949,11 +965,13 @@ function renderProducts(){
   const sectionsEl = document.getElementById('collectionSections');
   const gridEl = document.getElementById('prodGrid');
   const paginationEl = document.getElementById('pagination');
+  const backBtn = document.getElementById('backToHomeBtn');
 
   if (productsLoading) {
     sectionsEl.style.display = 'none';
     gridEl.style.display = '';
     paginationEl.innerHTML = '';
+    backBtn.style.display = 'none';
     gridEl.innerHTML = `<p style="grid-column:1/-1;color:var(--stone);font-size:0.9rem;">${t('filter.loading')}</p>`;
     return;
   }
@@ -964,13 +982,26 @@ function renderProducts(){
     sectionsEl.style.display = '';
     gridEl.style.display = 'none';
     paginationEl.innerHTML = '';
+    backBtn.style.display = 'none';
     renderCollectionSections();
   } else {
     sectionsEl.style.display = 'none';
     gridEl.style.display = '';
+    backBtn.style.display = 'flex';
     renderFlatGrid();
   }
 }
+
+document.getElementById('backToHomeBtn').addEventListener('click', () => {
+  activeCollection = 'all';
+  searchQuery = '';
+  currentPage = 1;
+  document.getElementById('searchInput').value = '';
+  const select = document.getElementById('collectionSelect');
+  if (select) select.value = 'all';
+  renderProducts();
+  document.getElementById('shop').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
 
 function renderPagination(totalPages){
   const el = document.getElementById('pagination');
